@@ -1,0 +1,138 @@
+
+
+```
+
+利用git上传本地项目到github
+
+1.绑定用户
+
+2.设置ssh key 并为github账号配置ssh key
+
+3.上传本地项目到github
+```
+
+
+
+1.绑定用户 
+
+```
+$ git config --global user.name "OopsAaron" # 注册github时的name
+$ git config --global user.email "1574468139@qq.com" # 注册github时的email
+```
+
+
+
+2.生成密钥SSH key  
+
+```bash
+ssh-keygen -t rsa -C "1574468139@qq.com"
+```
+
+此时，在根目录的.ssh文件中会生成公钥和密钥文件
+
+
+
+打开[github](https://link.zhihu.com/?target=http%3A//github.com/)，在头像下面点击`settings`，再点击`SSH and GPG keys`，新建一个SSH，名字随便。
+
+git bash中输入
+
+```bash
+cat ~/.ssh/id_rsa.pub # 复制.ssh里的公钥文件到github中
+```
+
+将输出的内容复制到框中，点击确定保存。即建立了ssh连接
+
+
+
+ 
+
+
+
+![image-20200720163835551](https://i.loli.net/2020/07/20/45pTnsvKBbYPDCQ.png)
+
+
+
+
+
+github上新建一个仓库后，在本地进行初始化本地仓库以及上传文件
+
+```
+git init #初始化仓库
+
+#复制git clone中的ssh地址
+
+git remote add origin git@github.com:OopsAaron/myBlog.git #远程连接仓库 （后部分是ssh地址）
+
+		（若出现fatal: remote origin already exists. 则执行 git remote rm origin，
+ 		 再重新执行git remote add origin git@github.com:OopsAaron/myBlog.git）
+
+
+```
+
+
+
+在本地写md文件以及修改，然后进行提交到github， 并更新到网站上。
+
+
+
+**3.提交到github**
+
+> 提交到 github 中的myBlog文件夹中
+
+
+
+将现有的项目添加并上传 (在所在目录下右键git bash)
+
+```
+git add . #添加当前文件夹下的所有文件
+
+git commit -m "first commit " # 引号内是本次的提交说明 
+
+git push -u origin master # 提交本地分支到远程分支
+		(若出现failed to push som refs to， 则执行git pull origin master，
+		将远程服务器github上的master拉下来，再重新push)
+```
+
+刷新github，即可看到上传的文件
+
+```
+git clone   https://github.com/raymond-zhao/cat-mall.git   ../Github/cat-mall 
+#将cat-mall代码克隆到  ../Github/cat-mall 中
+```
+
+
+
+
+
+**更新到网站**
+
+提交到github中的`OopsAaron`文件中托管，并更新到网站
+
+在本地编写完md文件，所在目录下右键git bash
+
+```
+hexo new "new_article"  # 新建md文件 ,也可以用Typora在目录下建md文件
+```
+
+
+
+```
+hexo clean # 
+
+hexo g  # 生成静态网页 
+
+hexo s # 可以在本地预览效果 http://localhost:4000/
+
+hexo d # 上传到github上，并可在github.io主页看到发布的文章
+```
+
+
+
+参考：
+
+Hexo+Github博客搭建：  https://zhuanlan.zhihu.com/p/35668237
+
+git上传文件：https://blog.csdn.net/sinat_20177327/article/details/76062030
+
+
+
