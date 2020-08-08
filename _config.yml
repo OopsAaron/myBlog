@@ -3,12 +3,12 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 思建的站点
-subtitle: ''
+title: 思建的NLP之旅
+subtitle: '沉淀自己'
 description: ''
 keywords:
 author: 李思建
-language: en
+language: zh-CN
 timezone: ''
 
 # URL
@@ -101,3 +101,22 @@ deploy:
   type: git
   repository: https://github.com/OopsAaron/OopsAaron.github.io.git
   branch: master
+
+#  #type: RSS的类型(atom/rss2)
+#  #path: 文件路径,默认是atom.xml/rss2.xml
+#  #limit:展示文章的数量,使用0或则false代表展示全部
+ 
+#  #RSS订阅插件
+#  feed: 
+#      type: atom
+#      path: atom.xml
+#      limit: 0
+#  #RSS订阅支持
+#  plugins: hexo-generate-feed
+
+
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
