@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "hexo": "^4.2.1",
+    "hexo-blog-encrypt": "^3.0.13",
     "hexo-deployer-git": "^2.1.0",
     "hexo-generator-archive": "^1.0.0",
     "hexo-generator-category": "^1.0.0",
@@ -24,6 +25,7 @@
     "hexo-renderer-marked": "^2.0.0",
     "hexo-renderer-stylus": "^1.1.0",
     "hexo-server": "^1.0.0",
+    "hexo-symbols-count-time": "^0.7.1",
     "hexo-wordcount": "^6.0.1"
   }
 }

@@ -9,11 +9,19 @@ description: transformer-pytorch
 
 ### 前言
 
+最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。
+
+本篇是对实现代码的注释，加上了自己的理解，也会有一些函数的介绍扩充。
+
+
+
 #### 参考链接
 
-> 
+> 解读的是哈佛的一篇transformer的pytorch版本实现
 >
-> 参考另一篇解读此代码的博客
+> http://nlp.seas.harvard.edu/2018/04/03/attention.html
+>
+> 参考另一篇博客
 >
 > http://fancyerii.github.io/2019/03/09/transformer-codes/
 >
@@ -166,9 +174,9 @@ The Transformer follows this overall architecture using stacked self-attention a
 
 ![png](https://i.loli.net/2020/07/28/P3fSgRhrmFtlpxY.png)
 
-## Encoder and Decoder Stacks
+### Encoder and Decoder Stacks
 
-### Encoder
+#### Encoder
 
 Encoder和Decoder都是由N个相同结构的Layer堆积(stack)而成。**因此我们首先定义clones函数，用于克隆相同的SubLayer。**
 
@@ -280,7 +288,7 @@ class EncoderLayer(nn.Module): #每一个编码层
 
 
 
-### Decoder
+#### Decoder
 
 The decoder is also composed of a stack of `N=6` identical layers.
 
@@ -343,7 +351,7 @@ def subsequent_mask(size):  #将i后面的mask掉
 
 
 
-![png](http://nlp.seas.harvard.edu/images/the-annotated-transformer_31_0.png)
+![png](https://i.loli.net/2020/08/08/7brnPfDJxsLBtvh.png)
 
 它的输出：
 
@@ -373,7 +381,7 @@ print(subsequent_mask(5))
 
 
 
-### Attention
+#### Attention
 
 An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.
 
@@ -497,7 +505,7 @@ def attention(query, key, value, mask=None, dropout=None):
 
 
 
-<img src="http://nlp.seas.harvard.edu/images/the-annotated-transformer_38_0.png" alt="png" style="zoom:67%;" />
+<img src="https://i.loli.net/2020/08/08/a2gozSYGn8NOkpH.png" alt="png" style="zoom:67%;" />
 
 ```python
 class MultiHeadedAttention(nn.Module):
@@ -567,7 +575,7 @@ Key和Value的运算完全相同，因此我们也分别得到8个Head的64维�
 
 
 
-### Applications of Attention in our Model
+#### A0ttention在模型中的应用
 
 在Transformer里，有3个地方用到了MultiHeadedAttention：
 
@@ -585,13 +593,13 @@ Key和Value的运算完全相同，因此我们也分别得到8个Head的64维�
 
   
 
-## Position-wise Feed-Forward Networks
+### Position-wise 前馈网络
 
 In addition to attention sub-layers, each of the layers in our encoder and decoder contains a fully connected feed-forward network, which is applied to each position separately and identically. `This consists of two linear transformations with a ReLU activation in between.`
 
 全连接层有两个线性变换以及它们之间的ReLU激活组成：
 
-<img src="E:\myBlog\source\_posts\image-20200728231445307.png" alt="image-20200728231445307" style="zoom:50%;" />
+<img src="https://i.loli.net/2020/08/08/PU96rciRsWxOCKp.png" alt="image-20200728231445307" style="zoom:50%;" />
 
 全连接层的输入和输出都是d_model(512)维的，中间隐单元的个数是d_ff(2048)维
 
@@ -608,7 +616,7 @@ class PositionwiseFeedForward(nn.Module):
         return self.w_2(self.dropout(F.relu(self.w_1(x))))
 ```
 
-## Embeddings and Softmax
+### Embeddings 和 Softmax
 
 
 
@@ -629,13 +637,13 @@ class Embeddings(nn.Module):
 
 
 
-## Positional Encoding
+### 位置编码
 
 位置编码的公式为：
 
- <img src="E:\myBlog\source\_posts\image-20200728232133981.png" alt="image-20200728232133981" style="zoom:50%;" />
+ <img src="https://i.loli.net/2020/08/08/WUpXhHsK3S1jCqn.png" alt="image-20200728232133981" style="zoom:50%;" />
 
-<img src="E:\myBlog\source\_posts\image-20200728232255029.png" alt="image-20200728232255029" style="zoom:50%;" />
+<img src="https://i.loli.net/2020/08/08/XOZPy89KVi1xjTh.png" alt="image-20200728232255029" style="zoom:50%;" />
 
  where `pos` is the position and `i` is the dimension. That is, each dimension of the positional encoding corresponds to a sinusoid. 
 
@@ -653,7 +661,7 @@ plt.legend(["dim %d"%p for p in [4,5,6,7]])
 
 
 
-![png](http://nlp.seas.harvard.edu/images/the-annotated-transformer_49_0.png)
+![png](https://i.loli.net/2020/08/08/TfDHKvnM3emYysL.png)
 
 
 
@@ -697,7 +705,7 @@ class PositionalEncoding(nn.Module):
 
 
 
-## Full Model
+### 完整模型
 
 > Here we `define a function that takes in hyperparameters and produces a full model.`
 
@@ -739,13 +747,13 @@ tmp_model = make_model(10, 10, 2)
 
 
 
-# Training
+### 训练
 
 This section describes the training regime for our models.
 
 > We stop for a quick interlude to introduce some of the tools needed to train a standard encoder decoder model. First `we define a batch object that holds the src and target sentences for training, as well as constructing the masks.`
 
-## Batches and Masking
+#### Batches 和 Masking
 
 `mask 矩阵来自 batch`
 
@@ -761,15 +769,17 @@ This section describes the training regime for our models.
 
 
 
-> **mask在Batch中定义，src_mask.size (30,1,10)** ,  **trg_mask.size(30,10,10)**
+> - mask在Batch中定义，src_mask.size (30,1,10) ,  trg_mask.size(30,10,10)
 >
-> **然后在MultiHeadedAttention中`mask = mask.unsqueeze(1)`又扩维了，src_mask.size(30,1,1,10)** ,**trg_mask.size(30,1,10,10)**
+> - 然后在MultiHeadedAttention中`mask = mask.unsqueeze(1)`又扩维了，
 >
-> **src_mask.size满足attention中的维度，所以可以对score进行mask**
+>   其中src_mask.size(30,1,1,10) ,trg_mask.size(30,1,10,10)
 >
-> **src_mask还在解码器的第1子层用到，相同的原理**
+> - src_mask.size满足attention中的维度，所以可以对score进行mask
 >
->  **trg_mask在解码器的第0子层用到，满足要求**
+>    src_mask还在解码器的第1子层用到，相同的原理
+>
+> - trg_mask在解码器的第0子层用到，满足要求
 
 ```python
 class Batch: #定义每一个batch中的src、tgt、mask
@@ -787,15 +797,14 @@ class Batch: #定义每一个batch中的src、tgt、mask
               trg.size(30,9) 这里去掉的最后一个单词, 不是真正的单词, 而是标志 '<eos>' , 						输入与输出都还有一个 '<sos>' 在句子的开头,  是decoder的输入，
             需要进行mask，使得Self-Attention不能访问未来的输入。最后一个词不需要用到trg
             """
-          
-            self.trg_y = trg[:, 1:] # trg_y.size(30,9) 
+    	    self.trg_y = trg[:, 1:] # trg_y.size(30,9) 
             #trg_y: 最后的结果。用于loss中的比较。 去掉开头的'<sos>'，是decoder的输出
             self.trg_mask = \
                 self.make_std_mask(self.trg, pad)
-            self.ntokens = (self.trg_y != pad).data.sum() #不为0的总数
+            self.ntokens = (self.trg_y != pad).data.sum() #不为0的总数 30*9 = 270
     
     @staticmethod
-    def make_std_mask(tgt, pad): #tgt_mask.size(30,9,9)
+    def make_std_mask(tgt, pad): #tgt_mask.size(30,9,9)，每一个序列都是一个9*9的矩阵
         "Create a mask to hide padding and future words."
         #"创建Mask，使得我们不能attend to未来的词"
         tgt_mask = (tgt != pad).unsqueeze(-2)
@@ -816,11 +825,7 @@ Batch构造函数的输入是src和trg，后者可以为None，因为再预测�
 
 
 
-
-
-
-
-## Training Loop
+#### Training Loop
 
 ```python
 def run_epoch(data_iter, model, loss_compute): #返回total_loss / total_tokens 。是一个数值，损失计算
@@ -834,15 +839,15 @@ def run_epoch(data_iter, model, loss_compute): #返回total_loss / total_tokens 
         #gen_data返回的是20个Batch，通过enumerate实例化20个batch 
         out = model.forward(batch.src, batch.trg, 
                             batch.src_mask, batch.trg_mask) #调用EncoderDecoder的实例化model，解码器作为输出
-        loss = loss_compute(out, batch.trg_y, batch.ntokens) #计算出loss。 trg_y是标准值。ntokens作为norm？？
+        loss = loss_compute(out, batch.trg_y, batch.ntokens) #计算出一个batch中的loss。 trg_y是标准值。ntokens作为norm
         total_loss += loss #loss叠加。进行20次
         total_tokens += batch.ntokens 
         tokens += batch.ntokens
         if i % 50 == 1: #i从0开始的，当i=1的时候，进行了一次batch，所以这里计算的就是一次batch所用的时间。而要进行20次。  50是随机设置
             elapsed = time.time() - start #计算一共用时
-            print("Epoch Step: %d Loss: %f Tokens per Sec: %f" %
-                    (i, loss / batch.ntokens, tokens / elapsed))
-            start = time.time()
+            print("Epoch Step: %d Loss: %f Tokens per Sec: %f" % 
+                    (i, loss / batch.ntokens, tokens / elapsed)) #所有batch中的loss和ntoken,即一个epoch中
+            start = time.time() # 重置时间
             tokens = 0
     return total_loss / total_tokens
 ```
@@ -851,7 +856,7 @@ def run_epoch(data_iter, model, loss_compute): #返回total_loss / total_tokens 
 
 
 
-## Training Data and Batching
+#### Training Data 和 Batching
 
 We trained on the standard WMT 2014 English-German dataset consisting of about 4.5 million sentence pairs. Sentences were encoded using byte-pair encoding, which has a shared source-target vocabulary of about 37000 tokens. For English- French, we used the significantly larger WMT 2014 English-French dataset consisting of 36M sentences and split tokens into a 32000 word-piece vocabulary.
 
@@ -874,11 +879,11 @@ def batch_size_fn(new, count, sofar):
     return max(src_elements, tgt_elements)
 ```
 
-## Hardware and Schedule
+#### 硬件 和 训练进度
 
 We trained our models on one machine with 8 NVIDIA P100 GPUs. For our base models using the hyperparameters described throughout the paper, each training step took about 0.4 seconds. We trained the base models for a total of 100,000 steps or 12 hours. For our big models, step time was 1.0 seconds. The big models were trained for 300,000 steps (3.5 days).
 
-## Optimizer
+#### Optimizer
 
 We used the `Adam optimizer` [(cite)](https://arxiv.org/abs/1412.6980) with β1=0.9β1=0.9, β2=0.98β2=0.98 and ϵ=10−9ϵ=10−9. We varied the learning rate over the course of training, according to the formula: lrate=d−0.5model⋅min(step_num−0.5,step_num⋅warmup_steps−1.5)lrate=dmodel−0.5⋅min(step_num−0.5,step_num⋅warmup_steps−1.5) This corresponds to increasing the learning rate linearly for the first warmupstepswarmupsteps training steps, and decreasing it thereafter proportionally to the inverse square root of the step number. We used warmupsteps=4000warmupsteps=4000.
 
@@ -931,9 +936,9 @@ None
 
 ![png](http://nlp.seas.harvard.edu/images/the-annotated-transformer_69_0.png)
 
-## Regularization
+#### Regularization
 
-### Label Smoothing
+##### Label Smoothing
 
 During training, we employed label smoothing of value ϵls=0.1ϵls=0.1 [(cite)](https://arxiv.org/abs/1512.00567). This hurts perplexity, as the model learns to be more unsure, but improves accuracy and BLEU score.
 
@@ -999,7 +1004,7 @@ None
 
 ![png](http://nlp.seas.harvard.edu/images/the-annotated-transformer_76_0.png)
 
-#### **总结**
+### **总结**
 
 transformer模型主要分为两大部分, 分别是编码器和解码器, 编码器负责把自然语言序列映射成为隐藏层(下图中第2步用九宫格比喻的部分), 含有自然语言序列的数学表达. 然后解码器把隐藏层再映射为自然语言序列, 从而使我们可以解决各种问题, 如情感分类, 命名实体识别, 语义关系抽取, 摘要生成, 机 器翻译等等, 下面我们简单说一下下图的每一步都做了什么:
 
@@ -1031,11 +1036,49 @@ transformer模型主要分为两大部分, 分别是编码器和解码器, 编�
 
 
 
-# A First Example
+原始data数据是：(30,10)
+
+src: (30,10)  trg:(30,10) 
+
+在encoder中，
+
+embedding： 参数x就是 src （30,10） 经过处理之后， x:（30,10,512） -> 即输入给encoder的x：(30,10,512)
+
+经过encoder各个层处理之后，输出的（30，10,512）  memory是encoder的输出，但是为什么memory：（1,10,512） ??? 因为在预测时 ，src是（1,10），不是（30,10）所以memory是（1,10,512）
+
+
+
+decoder中：输入来自 memory 和 trg_emd
+
+embedding ： 参数x是trg（30,9），经过处理之后，x：（30,9,512)   
+
+经过decoder各个层处理之后，输出的（30，9 , 512）  
+
+
+
+再经过generator层之后，x：（30,9,11） 
+
+
+
+在预测的时候是（1，1,512），不是（1,9,512），在预测完generator之后，（1,11），选一个最大的。
+
+因为是一个数字一个数字预测输出的，所以是1，不是9
+
+
+
+ 
+
+
+
+
+
+
+
+### 第一个例子
 
 > We can begin by trying out a simple copy-task. Given a random set of input symbols from a small vocabulary, the goal is to generate back those same symbols.
 
-## Synthetic Data
+#### Synthetic Data
 
 ```python
 def data_gen(V, batch, nbatches): # batch=30:一次输入多少， nbatch=20：输入多少次
@@ -1044,16 +1087,16 @@ def data_gen(V, batch, nbatches): # batch=30:一次输入多少， nbatch=20：�
 		#from_numpy ： 将numpy数据转换为tensor
 		#注：生成返回的tensor会和ndarry共享数据，任何对tensor的操作都会影响到ndarry
         data = torch.from_numpy(np.random.randint(1, V, size=(batch, 10))) #1是产生的最小值，V=11是最大值，size是形状（batch，10）。生成（batch，10）的矩阵，矩阵的每一个元素都是1~V-1之间  （取不到V）
-        data[:, 0] = 1 #取第0列的所有值？？？
+        data[:, 0] = 1 #将第0列的值赋值为1
         # Variable 就是一个存放值， 里面的值会不停的变化.  存放的是Torch 的 Tensor . 如果用一个 Variable 进行计算, 那返回的也是一个同类型的 Variable.  
         #requires_grad： 是否参与误差反向传播, 要不要计算梯度
-        src = Variable(data, requires_grad=False) #size(batch,10)
+        src = Variable(data, requires_grad=False) #size(batch,10) 和data的值完全一样
         tgt = Variable(data, requires_grad=False)
         yield Batch(src, tgt, 0)#yield就是return一个值，并且记住这个返回的位置，下次迭代就从这个位置后(下一行)开始
         #batch返回的是trg_mask 
 ```
 
-## Loss Computation
+#### Loss Computation
 
 ```python
 class SimpleLossCompute: #loss计算以及更新。调用LabelSmoothing，使用KL散度
@@ -1074,7 +1117,7 @@ class SimpleLossCompute: #loss计算以及更新。调用LabelSmoothing，使用
         return loss.data[0] * norm
 ```
 
-## Greedy Decoding
+#### Greedy Decoding
 
 ```python
 # Train the simple copy task.
@@ -1137,7 +1180,7 @@ Epoch Step: 1 Loss: 0.258793 Tokens per Sec: 644.372296
 #预测的时候没有用tgt（标准值），而是每次解码器的输入都是ys，是预测的值
 def greedy_decode(model, src, src_mask, max_len, start_symbol):
     memory = model.encode(src, src_mask) #memory是编码器的输出 。是一个矩阵
-    ys = torch.ones(1, 1).fill_(start_symbol).type_as(src.data) #填充输出开始符，和src的类型一样。对预测的句子进行初始化
+    ys = torch.ones(1, 1).fill_(start_symbol).type_as(src.data) #填充输出开始符，和src的类型一样。对预测的句子进行初始化 ys =1 （1,1）
     for i in range(max_len-1): #0~8 对每一个词都进行预测
         out = model.decode(memory, src_mask, 
                            Variable(ys), 
@@ -1165,7 +1208,7 @@ print(greedy_decode(model, src, src_mask, max_len=10, start_symbol=1))
 [torch.LongTensor of size 1x10]
 ```
 
-# A Real World Example
+### 真实例子
 
 > Now we consider a real-world example using the IWSLT German-English Translation task. This task is much smaller than the WMT task considered in the paper, but it illustrates the whole system. We also show how to use multi-gpu processing to make it really fast.
 
@@ -1175,7 +1218,7 @@ print(greedy_decode(model, src, src_mask, max_len=10, start_symbol=1))
 #!python -m spacy download de
 ```
 
-## Data Loading
+#### Data Loading
 
 > We will load the dataset using torchtext and spacy for tokenization.
 >
@@ -1251,7 +1294,7 @@ if True:
 >
 > `BucketIterator`和`Iterator`的区别是，BucketIterator尽可能的把长度相似的句子放在一个batch里面。
 
-## Iterators
+#### Iterators
 
 ```python
 """
@@ -1278,13 +1321,13 @@ class MyIterator(data.Iterator):
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
 
-def rebatch(pad_idx, batch):
+def rebatch(pad_idx, batch):  #pad_idx：空格键
     "Fix order in torchtext to match ours"
-    src, trg = batch.src.transpose(0, 1), batch.trg.transpose(0, 1)
+    src, trg = batch.src.transpose(0, 1), batch.trg.transpose(0, 1)#为什么要进行
     return Batch(src, trg, pad_idx) #调用上述的Batch类   pad_idx就是pad
 ```
 
-## Multi-GPU Training
+#### Multi-GPU Training
 
 
 
@@ -1386,11 +1429,11 @@ None
 >
 > 在具有4个Tesla V100 GPU的AWS p3.8xlarge机器上，每秒运行约27,000个词，批训练大小为12,000。
 
-## Training the System
+#### Training the System
 
 ```python
 #!wget https://s3.amazonaws.com/opennmt-models/iwslt.pt
-
+#进行train和eval
 if False: # false存在的意义在哪？？？ 使用GPU？
     model_opt = NoamOpt(model.src_embed[0].d_model, 1, 2000,
             torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
@@ -1436,7 +1479,7 @@ Translation:	<unk> <unk> . In my language , that means , thank you very much .
 Gold:	<unk> <unk> . It means in my language , thank you very much . 
 ```
 
-# Additional Components: BPE, Search, Averaging
+### Additional Components: BPE, Search, Averaging
 
 > So this mostly covers the transformer model itself. There are four aspects that we didn’t cover explicitly. We also have all these additional features implemented in [OpenNMT-py](https://github.com/opennmt/opennmt-py).
 
@@ -1463,7 +1506,7 @@ def average(model, models):
         p[0].copy_(torch.sum(*ps[1:]) / len(ps[1:]))
 ```
 
-# Results
+### Results
 
 On the WMT 2014 English-to-German translation task, the big transformer model (Transformer (big) in Table 2) outperforms the best previously reported models (including ensembles) by more than 2.0 BLEU, establishing a new state-of-the-art BLEU score of 28.4. The configuration of this model is listed in the bottom line of Table 3. Training took 3.5 days on 8 P100 GPUs. Even our base model surpasses all previously published models and ensembles, at a fraction of the training cost of any of the competitive models.
 
@@ -1499,7 +1542,7 @@ print(trans)
 Translation:	<s> ▁Die ▁Protokoll datei ▁kann ▁ heimlich ▁per ▁E - Mail ▁oder ▁FTP ▁an ▁einen ▁bestimmte n ▁Empfänger ▁gesendet ▁werden . 
 ```
 
-## Attention Visualization
+#### Attention Visualization
 
 > Even with a greedy decoder the translation looks pretty good. We can further visualize it to see what is happening at each layer of the attention
 
@@ -1584,6 +1627,7 @@ Decoder Src Layer 6
 
 ![png](http://nlp.seas.harvard.edu/images/the-annotated-transformer_119_17.png)
 
-# Conclusion
+### Conclusion
 
 > Hopefully this code is useful for future research. Please reach out if you have any issues. If you find this code helpful, also check out our other OpenNMT tools.
+
