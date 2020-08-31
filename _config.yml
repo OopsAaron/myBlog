@@ -168,3 +168,8 @@ githubEmojis:
     display: inline
     vertical-align: middle # Freemind适用
   localEmojis:
+
+
+pandoc:
+  extensions:
+    - '-implicit_figures'

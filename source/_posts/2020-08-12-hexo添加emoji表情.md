@@ -3,18 +3,18 @@ title: 2020-08-12-hexo添加emoji表情
 mathjax: true
 date: 2020-08-12 17:16:54
 tags: [hexo,故障排除]
-top: 80
+top: 
 categories: hexo
 description: 解决hexo无法渲染emoji表情的问题
 ---
 
 ### 前言
 
-markdown支持在文本中使用emoji，在Typora中可以很方便地使用表情。例如输入 `:star:`  ,就可以显示出:star:的表情，即表情的`aliases` 编码格式。但是在部署到网站的时候，:star:却渲染不出来，我寻找了很久的解决方案，终于解决 :laughing:
+markdown支持在文本中使用emoji，在Typora中可以很方便地使用表情。例如输入 `:star:`  ,可以显示出:star:表情，即表情的`aliases` 编码格式。但是在部署到网站的时候，:star:却渲染不出来，我寻找了很久的解决方案，终于解决 :laughing:
 
 
 
-### 更换hexo渲染器
+### 更换hexo渲染器 
 
 我的hexo版本是version 4.2.1, 可以在在根目录下 packge.json 文件里面看到使用hexo初始化的结果。
 

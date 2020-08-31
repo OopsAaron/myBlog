@@ -9,7 +9,7 @@ description: transformer-pytorch
 
 ### 前言
 
-最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。
+最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。s
 
 本篇是对实现代码的注释，加上了自己的理解，也会有一些函数的介绍扩充。
 
@@ -36,6 +36,12 @@ description: transformer-pytorch
 > 训练过程中的 Mask实现
 >
 > https://www.cnblogs.com/wevolf/p/12484972.html
+>
+> transformer综述
+>
+> [https://libertydream.github.io/2020/05/03/Transformer-%E7%BB%BC%E8%BF%B0/](https://libertydream.github.io/2020/05/03/Transformer-综述/)
+
+
 
 
 
@@ -43,7 +49,7 @@ description: transformer-pytorch
 
 
 
-![png](https://i.loli.net/2020/07/28/NUAyXWJ5DzHmjuv.png)
+![这是一张图片](https://i.loli.net/2020/07/28/NUAyXWJ5DzHmjuv.png)
 
 
 
