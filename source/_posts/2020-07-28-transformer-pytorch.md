@@ -9,7 +9,7 @@ description: transformer-pytorch
 
 ### 前言
 
-最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。s
+最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。
 
 本篇是对实现代码的注释，加上了自己的理解，也会有一些函数的介绍扩充。
 
@@ -1484,4 +1484,29 @@ for i, batch in enumerate(valid_iter):
 Translation:	<unk> <unk> . In my language , that means , thank you very much . 
 Gold:	<unk> <unk> . It means in my language , thank you very much . 
 ```
+
+
+
+
+
+### 理解QKV
+
+作者：繁华里流浪
+链接：https://www.zhihu.com/question/298810062/answer/1336554776
+来源：知乎
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+
+
+我认为attention主要分为两个核心步骤：1. 计算注意力权重 2. 加权求和
+
+其中Q(query)，K(key)用来计算对应的注意力权重atten_i，V(value)用来进行加权求和也就是求最后attention的结果。
+
+![image-20200904164236348](E:\myBlog\source\_posts\image-20200904164236348.png)
+
+在理解attention的时候我想了一个买水果的例子。今天你要去水果摊买水果，首先你脑袋里会想出一个买水果的标准（个大、成色好、价格美丽等）作为 query，然后你就去各个水果摊逛了，水果摊主上来给你拿出水果一顿介绍（我这香甜可口，新鲜美味，性价比高）这就是 key，然后你会通过水果的情况 key 和自己心中标准 query 权衡给这个水果摊子打个分，当你一条水果街都走完了，你就对整条街的水果摊都有了一个性价比分数（atten），然后根据这个性价比分数就开始买了，这个水果摊好分数高，我买多点，那个水果摊性价比分数低不能满足我的需求我就少买点，最后我就从不同的水果摊采购了不同数量的水果（value）放进了自己的推推车里（output）
+
+
+
+
 

@@ -3,7 +3,7 @@ title: 2020-08-12-更换hexo渲染器支持Latex
 mathjax: true
 date: 2020-08-12 23:44:37
 tags: [hexo , Latex]
-top: 80
+top: 
 categories: hexo 
 description: 更换hexo渲染器支持Latex
 ---
