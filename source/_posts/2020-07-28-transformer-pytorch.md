@@ -9,7 +9,7 @@ description: transformer-pytorch
 
 ### 前言
 
-最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。果然要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。
+最近几天都在阅读哈佛pytorch实现transformer的代码，代码风格很好，很值得参考和研读。和实验室师兄又在一起讨论了几次，代码思路和实现过程基本都了解了，对于原论文 [“Attention is All You Need”](https://arxiv.org/abs/1706.03762) 中关于transformer模型的理解又深入了许多。要想了解模型，还是要好好研读实现代码。以便于后面自己结合模型的研究。
 
 本篇是对实现代码的注释，加上了自己的理解，也会有一些函数的介绍扩充。
 
@@ -43,8 +43,6 @@ description: transformer-pytorch
 
 
 
-
-
 ### The Annotated Transformer
 
 
@@ -71,13 +69,11 @@ seaborn.set_context(context="talk")
 
 
 
-
-
-Transformer使用了Self-Attention机制，它在编码每一词的时候都能够注意(attend to)整个句子，从而可以解决长距离依赖的问题，同时计算Self-Attention可以用矩阵乘法一次计算所有的时刻，因此可以充分利用计算资源(CPU/GPU上的矩阵运算都是充分优化和高度并行的)。
+Transformer使用了Self-Attention机制，它在编码每一词的时候都能够注意(attend to)整个句子，从而可以解决长距离依赖的问题，同时**计算Self-Attention可以用矩阵乘法一次计算所有的时刻**，因此可以充分利用计算资源(CPU/GPU上的矩阵运算都是充分优化和高度并行的)。
 
 ### 模型结构
 
-Most competitive neural sequence transduction models have an encoder-decoder structure [(cite)](https://arxiv.org/abs/1409.0473). Here, `the encoder maps an input sequence of symbol representations (x1,…,xn)(x1,…,xn) to a sequence of continuous representations z=(z1,…,zn)z=(z1,…,zn). Given z, the decoder then generates an output sequence (y1,…,ym)(y1,…,ym) of symbols one element at a time.` At each step the model is auto-regressive [(cite)](https://arxiv.org/abs/1308.0850), consuming the previously generated symbols as additional input when generating the next.
+Most competitive neural sequence transduction models have an encoder-decoder structure [(cite)](https://arxiv.org/abs/1409.0473). Here, `the encoder maps an input sequence of symbol representations(x1,…,xn) to a sequence of continuous representations z=(z1,…,zn). Given z, the decoder then generates an output sequence (y1,…,ym) of symbols one element at a time.` At each step the model is auto-regressive [(cite)](https://arxiv.org/abs/1308.0850), consuming the previously generated symbols as additional input when generating the next.
 
 
 
@@ -129,7 +125,7 @@ class Generator(nn.Module):  #decoder后面的linear+softmax
 	# d_model是Decoder输出的大小，vocab是词典大小 （数据语料有多少词 ）
     def __init__(self, d_model, vocab):
         super(Generator, self).__init__()
-        self.proj = nn.Linear(d_model, vocab) #全连接，作为softmax的输入。
+        self.proj = nn.Linear(d_model, vocab) #全连接成vocab大小，作为softmax的输入。
 
     def forward(self, x):
         return F.log_softmax(self.proj(x), dim=-1) #softmax的log值
@@ -137,40 +133,9 @@ class Generator(nn.Module):  #decoder后面的linear+softmax
 
 
 
-注：`Generator返回的是softmax的log值`。在PyTorch里为了计算交叉熵损失，有两种方法。第一种方法是使用**nn.CrossEntropyLoss()**，一种是使用**NLLLoss()**。很多开源代码里第二种更常见，
+注：`Generator返回的是softmax的log值`。在PyTorch里为了计算交叉熵损失，有两种方法。第一种方法是使用**nn.CrossEntropyLoss()**，一种是使用**NLLLoss()**。很多开源代码里第二种更常见
 
-我们先看CrossEntropyLoss，它就是计算交叉熵损失函数，比如：
 
-```python
-criterion = nn.CrossEntropyLoss()
-
-x = torch.randn(1, 5)
-y = torch.empty(1, dtype=torch.long).random_(5)
-
-loss = criterion(x, y)
-```
-
-比如上面的代码，假设是5分类问题，x表示模型的输出logits(batch=1)，而y是真实分类的下标(0-4)。实际的计算过程为：<img src="https://i.loli.net/2020/08/06/KyPspa4Cqef6m8Q.png" alt="image-20200806000621448" style="zoom: 67%;" />
-
-比如logits是[0,1,2,3,4]，真实分类是3，那么上式就是：
-
-<img src="https://i.loli.net/2020/08/06/i7mfUWAeHE5P1zd.png" alt="image-20200806000641945" style="zoom:67%;" />
-
-因此我们也可以使用NLLLoss()配合F.log_softmax函数(或者nn.LogSoftmax，这不是一个函数而是一个Module了)来实现一样的效果：
-
-```python
-m = nn.LogSoftmax(dim=1)
-criterion = nn.NLLLoss()
-x = torch.randn(1, 5)
-y = torch.empty(1, dtype=torch.long).random_(5)
-loss = criterion(m(x), y)
-```
-
-NLLLoss(Negative Log Likelihood Loss)是计算负log似然损失。它输入的x是log_softmax之后的结果(长度为5的数组)，y是真实分类(0-4)，输出就是x[y]。因此上面的代码为：
-
-```python
-criterion(m(x), y)=m(x)[y]
-```
 
 
 
@@ -186,7 +151,7 @@ The Transformer follows this overall architecture using stacked self-attention a
 
 Encoder和Decoder都是由N个相同结构的Layer堆积(stack)而成。**因此我们首先定义clones函数，用于克隆相同的SubLayer。**
 
-这里使用了**nn.ModuleList**，ModuleList就像一个普通的Python的List，我们可以使用下标来访问它，它的好处是传入的ModuleList的所有Module都会注册的PyTorch里，这样Optimizer就能找到这里面的参数，从而能够用梯度下降更新这些参数。但是nn.ModuleList并不是Module(的子类)，因此它没有forward等方法，我们通常把它放到某个Module里。
+这里使用了**nn.ModuleList**，ModuleList就像一个普通的Python的List，我们可以使用下标来访问它，它的好处是传入的ModuleList的所有Module都会注册到PyTorch里，这样Optimizer就能找到这里面的参数，从而能够用梯度下降更新这些参数。但是nn.ModuleList并不是Module(的子类)，因此它没有forward等方法，我们通常把它放到某个Module里。
 
 ```python
 def clones(module, N):  #克隆N层，是个层数的列表。 copy.deepcopy是深复制， 一个改变不会影响另一个
@@ -200,7 +165,7 @@ def clones(module, N):  #克隆N层，是个层数的列表。 copy.deepcopy是�
 class Encoder(nn.Module):  #定义编码器 
     
     #Encoder是N个EncoderLayer的stack
-    def __init__(self, layer, N): # 根据make_model定义，layer = encoderlayer （sublayer）
+    def __init__(self, layer, N): # 根据make_model定义，layer = encoderlayer（sublayer）
         super(Encoder, self).__init__()
         self.layers = clones(layer, N) #编码器有6层编码层，根据上述函数的定义，module=layer
         self.norm = LayerNorm(layer.size) #调用下面的LayerNorm。 分开定义是因为 LayerNorm = 2* layer
@@ -215,22 +180,22 @@ class Encoder(nn.Module):  #定义编码器
 
 
 ```python
-class LayerNorm(nn.Module): #add & norm部分  作为每一个子层的输出
+class LayerNorm(nn.Module): #norm部分  作为每一个子层的输出
     "Construct a layernorm module (See citation for details)."
     def __init__(self, features, eps=1e-6): #feature = layer.size layer的形状
         super(LayerNorm, self).__init__()
         
-        self.a_2 = nn.Parameter(torch.ones(features))  #将后面的tensor转换为可优化的参数
+        self.a_2 = nn.Parameter(torch.ones(features))  #将后面的tensor转换为可优化的参数。初始化为全1
         self.b_2 = nn.Parameter(torch.zeros(features))
-        self.eps = eps #很小的值
+        self.eps = eps # 很小的值
 
     def forward(self, x): # 平均值和标准差
-        mean = x.mean(-1, keepdim=True)
-        std = x.std(-1, keepdim=True)
+        mean = x.mean(-1, keepdim=True) # 在最后一维进行操作，计算mean（也就是每一个样本的所有值）。保持原始的维度
+        std = x.std(-1, keepdim=True) 
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2 #输出
 ```
 
-**不管是Self-Attention还是全连接层，都首先是LayerNorm，然后是Self-Attention/Dense，然后是Dropout，最好是残差连接。这里面有很多可以重用的代码，我们把它封装成SublayerConnection。**
+**不管是Self-Attention还是全连接层，都首先是LayerNorm，然后是Self-Attention/Dense，然后是Dropout，最后是残差连接。这里面有很多可以重用的代码，我们把它封装成SublayerConnection。**
 
 ------
 
@@ -239,7 +204,7 @@ That is, `the output of each sub-layer is LayerNorm(x+Sublayer(x)), where Sublay
 To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension `dmodel=512`.
 
 ```python
-class SublayerConnection(nn.Module): #每一个编码层中的两个子层之间的连接
+class SublayerConnection(nn.Module): # 每一个编码层中的两个子层
     """
 	LayerNorm + sublayer(Self-Attenion/Dense) + dropout + 残差连接
 	为了简单，把LayerNorm放到了前面，这和原始论文稍有不同，原始论文LayerNorm在最后。
@@ -264,11 +229,11 @@ class SublayerConnection(nn.Module): #每一个编码层中的两个子层之间
 
 forward调用sublayer[0] (这是SublayerConnection对象)的__call__方法，最终会调到它的forward方法，而这个方法需要两个参数，**一个是输入Tensor，一个是一个callable，并且这个callable可以用一个参数来调用**。而**self_attn函数需要4个参数(Query的输入,Key的输入,Value的输入和Mask)**，因此这里我们使用lambda的技巧把它变成一个参数x的函数(mask可以看成已知的数)。
 
-  Callable 类型是可以被执行调用操作的类型。包含自定义函数等。自定义的函数比如使用def、lambda所定义的函数
+Callable 类型是可以被执行调用操作的类型。包含自定义函数等。自定义的函数比如使用def、lambda所定义的函数
 
 ```python
 
-class EncoderLayer(nn.Module): #每一个编码层
+class EncoderLayer(nn.Module): #每一个编码层，包含两个子层
     "Encoder is made up of self-attn and feed forward (defined below)"
     def __init__(self, size, self_attn, feed_forward, dropout):
         super(EncoderLayer, self).__init__()
@@ -305,7 +270,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.size)
-     #memory: 编码器的输出 x是输入
+     # memory: 编码器的输出 x是输入
     def forward(self, x, memory, src_mask, tgt_mask):
         for layer in self.layers:
             x = layer(x, memory, src_mask, tgt_mask)
@@ -349,8 +314,10 @@ Decoder和Encoder有一个关键的不同：Decoder在解码第t个时刻的时�
 def subsequent_mask(size):  #将i后面的mask掉
     "Mask out subsequent positions."
     attn_shape = (1, size, size)
-    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8') #triu 上三角
-    return torch.from_numpy(subsequent_mask) == 0 #将numpy格式转换为tensor格式，判断是否为0， 输出布尔值
+    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8') #triu 上三角 对角线上移1位
+    return torch.from_numpy(subsequent_mask) == 0 #将numpy转换为tensor格式，判断是否为0，输出布尔值
+
+#直接np.tril（）取下三角应该也是可以的
 ```
 
 
@@ -371,7 +338,7 @@ print(subsequent_mask(5))
   1  1  1  1  1
 ```
 
-我们发现它输出的是一个方阵，对角线和下面都是1。**第一行只有第一列是1，它的意思是时刻1只能attend to输入1**，第三行说明时刻3可以attend to {1,2,3}而不能attend to{4,5}的输入，因为在真正Decoder的时候这是属于Future的信息。代码首先使用triu产生一个上三角阵：
+我们发现它输出的是一个方阵，对角线和下面都是1。**第一行只有第一列是1，它的意思是时刻1只能attend to输入1**，第三行说明时刻3可以`attend to {1,2,3}`而不能`attend to{4,5}`的输入，因为在真正Decoder的时候这是属于Future的信息。代码首先使用triu产生一个上三角阵：
 
 ```
 0 1 1 1 1
@@ -414,7 +381,7 @@ def attention(query, key, value, mask=None, dropout=None):
     return torch.matmul(p_attn, value), p_attn
 ```
 
-我们知道, 在训练的时候, 我们是以 batch_size 为单位的, 那么就会有 padding, 一般我们取 pad == 0, 那么就会造成在 Attention 的时候, query 的值为 0, query 的值为 0, 所以我们计算的对应的 scores 的值也是 0, 那么就会导致 softmax 很可能分配给该单词一个相对不是很小的比例, 因此, 我们将 pad 对应的 score 取值为**负无穷**（普通的计算，score可以为负数？）, 以此来减小 pad 的影响. 
+我们知道, **在训练的时候, 我们是以 batch_size 为单位的**, 那么就会有 padding, 一般我们取 pad == 0, 那么就会造成在 Attention 的时候, query 的值为 0, query 的值为 0, 所以我们计算的对应的 scores 的值也是 0, 那么就会导致 softmax 很可能分配给该单词一个相对不是很小的比例, 因此, 我们将 pad 对应的 score 取值为**负无穷**（普通的计算，score可以为负数？不是，根据softmax的计算公式，就算pad=0，那么e^0=1,也是会占有一些概率值的）, 以此来减小 pad 的影响. 
 
 
 
@@ -444,6 +411,8 @@ def attention(query, key, value, mask=None, dropout=None):
 ```
 
 而上面的写法一次完成所有这些循环，效率更高。**输出的score是(30, 8, 33, 33)**，前面两维不看，那**么是一个(33, 33)的attention矩阵a，aij表示时刻 i关注 j 的得分**(还没有经过softmax变成概率)。
+
+
 
 **在编码器的attention中src_mask的作用！！！**
 
@@ -507,7 +476,7 @@ def attention(query, key, value, mask=None, dropout=None):
 
 
 
-详细结构如下图所示，输入Q，K和V经过多个线性变换后得到N(8)组Query，Key和Value，然后使用Self-Attention计算得到N个向量，然后拼接起来，**最后使用一个线性变换进行降维。**
+详细结构如下图所示，**输入Q，K和V经过多个线性变换后得到N(8)组Query，Key和Value**，然后使用Self-Attention计算得到N个向量，然后拼接起来，**最后使用一个线性变换进行降维。**
 
 
 
@@ -522,11 +491,16 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = clones(nn.Linear(d_model, d_model), 4)
+        self.linears = clones(nn.Linear(d_model, d_model), 4) # 构造4个(d_model ， d_model)的矩阵
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
         
-    def forward(self, query, key, value, mask=None):
+    def forward(self, query, key, value, mask=None):  
+        """
+        在编码器中，q、k、v都是x作为输入。
+        在解码器中，第一层是x输入；第二层是q是x输入，k、v是memory输入
+        """
+        
         "Implements Figure 2"
         if mask is not None:
             # # 所有h个head的mask都是相同的 
@@ -538,8 +512,9 @@ class MultiHeadedAttention(nn.Module):
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for l, x in zip(self.linears, (query, key, value))]
            #.view()表示重构张量的维度
+           #对于l对应的是zip中的linears ， x分别对应的是query/key/value 。 然后分别进行l(x)运算
+           #为什么要进行transpose(1, 2)？？？？
          #注：因为每个Linear学习到的参数是不一样的。所以qkv三个也是不一样的
-            
             
         # 2)使用attention函数计算 
         x, self.attn = attention(query, key, value, mask=mask, 
@@ -569,19 +544,21 @@ query, key, value = \
 
 > 1.一般来说，矩阵相乘，[a,b] x [b,c] = [a,c]
 >
-> 所以不同维度要进行处理，必须降维。例如 A 矩阵 [a,b,c], B 矩阵是[c,d]
+> 所以不同维度要进行处理，必须降维。
 >
-> 这个时候就需要将 A 矩阵看成是 [axb, c] 与 [c,d] 进行相乘，得到结果。
+> 例如 A 矩阵 [a,b,c], B 矩阵是[c,d]，这个时候就需要将 A 矩阵看成是 [axb, c] 与 [c,d] 进行相乘，得到结果。
 >
 > 2. Linear函数l(x)，应该就是 (batch*time,512)**(512,512)
 
 Key和Value的运算完全相同，因此我们也分别得到8个Head的64维的Key和64维的Value。接下来**调用attention函数，得到x和self.attn。其中x的shape是(batch, 8, time, 64)，而attn是(batch, 8, time, time)。**
 
+> time是倍数
+
 **x.transpose(1, 2)把x变成(batch, time, 8, 64)，然后把它view成(batch, time, 512)，其实就是把最后8个64维的向量拼接成512的向量。最后使用self.linears[-1]对x进行线性变换，self.linears[-1]是(512, 512)的，因此最终的输出还是(batch, time, 512)。我们最初构造了4个(512, 512)的矩阵，前3个用于对query，key和value进行变换，而最后一个对8个head拼接后的向量再做一次变换。**
 
 
 
-#### A0ttention在模型中的应用
+#### Attention在模型中的应用
 
 在Transformer里，有3个地方用到了MultiHeadedAttention：
 
@@ -694,7 +671,7 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len).unsqueeze(1)
         #之所以用log再exp,可能是考虑到数值过大溢出的问题
-        div_term = torch.exp(torch.arange(0, d_model, 2) *
+        div_term = torch.exp(torch.arange(0, d_model, 2) * 
                              -(math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -771,7 +748,7 @@ This section describes the training regime for our models.
 
 这个矩阵也很形象, 分别表示已经预测的单词的个数为, 1, 2, 3, 4, 5.
 
-然后我们将以上过程反过来过一篇, 就很明显了, 在 batch阶段获得 mask 矩阵, 然后和 batch 一起训练, 在 encoder 与 deocder 阶段实现 mask 机制.
+然后我们将以上过程反过来过一篇, 就很明显了, 在batch阶段获得 mask 矩阵, 然后和 batch 一起训练, 在 encoder 与 deocder 阶段实现 mask 机制.
 
 
 
@@ -913,7 +890,7 @@ class NoamOpt:
         for p in self.optimizer.param_groups:
             p['lr'] = rate
         self._rate = rate
-        self.optimizer.step()
+        self.optimizer.step() #更新参数
         
     def rate(self, step = None):
         "Implement `lrate` above"
@@ -1012,7 +989,7 @@ None
 
 ### **总结**
 
-transformer模型主要分为两大部分, 分别是编码器和解码器, 编码器负责把自然语言序列映射成为隐藏层(下图中第2步用九宫格比喻的部分), 含有自然语言序列的数学表达. 然后解码器把隐藏层再映射为自然语言序列, 从而使我们可以解决各种问题, 如情感分类, 命名实体识别, 语义关系抽取, 摘要生成, 机 器翻译等等, 下面我们简单说一下下图的每一步都做了什么:
+transformer模型主要分为两大部分, 分别是编码器和解码器, 编码器负责把自然语言序列映射成为隐藏层(下图中第2步用九宫格比喻的部分), 含有自然语言序列的数学表达. 然后解码器把隐藏层再映射为自然语言序列, 从而使我们可以解决各种问题, 如情感分类, 命名实体识别, 语义关系抽取, 摘要生成, 机器翻译等等, 下面我们简单说一下下图的每一步都做了什么:
 
 > 1.输入自然语言序列到编码器: Why do we work?(为什么要工作); 
 >
@@ -1048,7 +1025,9 @@ src: (30,10)  trg:(30,10)
 
 在encoder中，
 
-embedding： 参数x就是 src （30,10） 经过处理之后， x:（30,10,512） -> 即输入给encoder的x：(30,10,512)
+embedding： 参数x就是 src （30,10） 经过处理之后， x:（30,10,512） 
+
+-> 即输入给encoder的x：(30,10,512)
 
 经过encoder各个层处理之后，输出的（30，10,512）  memory是encoder的输出，但是为什么memory：（1,10,512） ??? 因为在预测时 ，src是（1,10），不是（30,10）所以memory是（1,10,512）
 
@@ -1070,13 +1049,13 @@ embedding ： 参数x是trg（30,9），经过处理之后，x：（30,9,512)
 
 因为是一个数字一个数字预测输出的，所以是1，不是9
 
-
-
  
 
+#### 具体流程
 
+transformer的encoder部分，是并行计算各个token之间的关系，然后输出给decoder一个memory，decoder再产生预测值，计算loss之后，再反向传播。因为是一个计算图，所以encoder和decoder的参数都会更新。
 
-
+参数更新完之后，下一个batch的数据再输进来，再计算loss，再更新，以此循环
 
 
 
@@ -1118,7 +1097,7 @@ class SimpleLossCompute: #loss计算以及更新。调用LabelSmoothing，使用
                               y.contiguous().view(-1)) / norm  #计算loss
         loss.backward() #将loss反向传播。loss是标量，根据链式法则自动计算出叶子节点的梯度值
         if self.opt is not None: #存在优化
-            self.opt.step() #调用opt的step函数。 adam优化，，更新参数
+            self.opt.step() #调用opt的step函数。 adam优化，更新参数
             self.opt.optimizer.zero_grad() #把梯度置零，也就是把loss关于weight的导数变成0.
         return loss.data[0] * norm
 ```
